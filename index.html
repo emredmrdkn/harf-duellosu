@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Harf Düellosu</title>
+<meta name="description" content="Harf Düellosu: beş harfinle çengel bulmacayı doldur, kelimeyi sen tamamla. Bota karşı ya da arkadaşınla oyna.">
+<meta name="theme-color" content="#FFFFFF">
+<meta name="mobile-web-app-capable" content="yes">
+<meta property="og:title" content="Harf Düellosu">
+<meta property="og:description" content="İki kişilik çengel bulmaca kapışması. Linke dokun, oyuna katıl!">
+<meta property="og:image" content="ikonlar/icon-512.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="ikonlar/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="ikonlar/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Harf Düellosu">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="stylesheet" href="css/stil.css">
+</head>
+<body>
+
+<main id="uygulama">
+
+  <!-- ANA EKRAN -->
+  <section id="ekran-ana" class="ekran ana">
+    <div class="ana-ust">
+      <svg class="logo-isaret" viewBox="0 0 120 96" aria-hidden="true">
+        <g transform="rotate(-10 42 50)">
+          <rect x="12" y="20" width="60" height="60" rx="13" fill="#EF5B4C"/>
+          <rect x="12" y="20" width="60" height="54" rx="13" fill="#F4776A"/>
+          <path d="M31 34v32M53 34v32M31 50h22" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round" fill="none"/>
+        </g>
+        <g transform="rotate(9 80 48)">
+          <rect x="50" y="16" width="60" height="60" rx="13" fill="#17877F"/>
+          <rect x="50" y="16" width="60" height="54" rx="13" fill="#1FA39A"/>
+          <path d="M69 30v32h9a16 16 0 0 0 0-32z" stroke="#FFFFFF" stroke-width="8" stroke-linejoin="round" fill="none"/>
+        </g>
+      </svg>
+      <h1 class="logo-yazi"><span>HARF</span><b>DÜELLOSU</b></h1>
+      <p class="slogan">Harfini doğru kareye koy, kelimeyi sen bitir.</p>
+    </div>
+
+    <div class="ana-orta">
+      <button id="btn-ad" class="ad-rozet" type="button" aria-label="Adını değiştir">
+        <span class="ad-daire" id="ad-harf">S</span>
+        <span id="ad-metin">Adını yaz</span>
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4zM13 7l4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+
+      <button id="btn-devam" class="dugme ikincil genis" type="button" hidden>Yarım kalan oyuna devam et</button>
+      <button id="btn-odaya-don" class="dugme ikincil genis" type="button" hidden>Arkadaşınla oyuna dön</button>
+
+      <div class="kart">
+        <div class="kart-baslik">Bota karşı</div>
+        <div class="seviyeler" id="seviyeler" role="radiogroup" aria-label="Zorluk">
+          <button type="button" class="seviye" data-seviye="kolay" role="radio"><span class="sv-simge">🦉</span><span class="sv-ad">Kolay</span></button>
+          <button type="button" class="seviye" data-seviye="orta" role="radio"><span class="sv-simge">🦊</span><span class="sv-ad">Orta</span></button>
+          <button type="button" class="seviye" data-seviye="zor" role="radio"><span class="sv-simge">🐢</span><span class="sv-ad">Zor</span></button>
+        </div>
+        <button id="btn-bot" class="dugme birincil genis" type="button">Oyna</button>
+      </div>
+
+      <div class="kart">
+        <div class="kart-baslik">Arkadaşınla canlı</div>
+        <p class="kart-aciklama">Oda kur, bağlantıyı WhatsApp'tan gönder; arkadaşın dokununca oyun başlar.</p>
+        <button id="btn-arkadas" class="dugme yesil genis" type="button">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 3a9 9 0 0 0-7.7 13.6L3 21l4.5-1.2A9 9 0 1 0 12 3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9 8.5c0 3 2.5 6 6 6.500" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          Oda kur ve davet et
+        </button>
+      </div>
+    </div>
+
+    <div class="ana-alt">
+      <div class="hizli" id="hizli">
+        <button id="btn-yukle" class="hizli-kutu" type="button">
+          <span class="hizli-simge lacivert"><svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true"><rect x="6.5" y="2.5" width="11" height="19" rx="2.500" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7.500v6m0 0-2.500-2.500M12 13.500l2.500-2.500M10 17.500h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <b>Telefona kur</b><small>Android ve iOS</small>
+        </button>
+        <button id="btn-oyunu-paylas" class="hizli-kutu" type="button">
+          <span class="hizli-simge turkuaz"><svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true"><circle cx="6" cy="12" r="2.500" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="17.500" cy="5.500" r="2.500" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="17.500" cy="18.500" r="2.500" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8.200 10.800l7-4M8.200 13.200l7 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+          <b>Oyunu paylaş</b><small>Bağlantıyı gönder</small>
+        </button>
+        <button id="btn-nasil" class="hizli-kutu" type="button">
+          <span class="hizli-simge hardal"><svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true"><path d="M9 9.200a3 3 0 1 1 4.300 2.700c-.9.500-1.300 1.200-1.300 2.100M12 17.600h.01" fill="none" stroke="currentColor" stroke-width="2.400" stroke-linecap="round"/></svg></span>
+          <b>Nasıl oynanır</b><small>Kurallar</small>
+        </button>
+      </div>
+      <div class="istatistik" id="istatistik"></div>
+    </div>
+  </section>
+
+  <!-- LOBİ -->
+  <section id="ekran-lobi" class="ekran lobi" hidden>
+    <header class="ust-cubuk">
+      <button class="simge-dugme" id="btn-lobi-geri" type="button" aria-label="Geri">
+        <svg viewBox="0 0 24 24" width="24" height="24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="ust-baslik">Arkadaşını davet et</div>
+      <span class="simge-dugme bos"></span>
+    </header>
+    <div class="lobi-govde">
+      <div class="lobi-kod-etiket">Oda kodu</div>
+      <div class="lobi-kod" id="lobi-kod">·····</div>
+      <p class="lobi-aciklama" id="lobi-durum">Oda kuruluyor…</p>
+      <a id="btn-whatsapp" class="dugme yesil genis" href="#" target="_blank" rel="noopener">WhatsApp ile gönder</a>
+      <button id="btn-paylas" class="dugme ikincil genis" type="button">Başka uygulamayla paylaş</button>
+      <button id="btn-kopyala" class="dugme ikincil genis" type="button">Bağlantıyı kopyala</button>
+      <div class="bekleme" id="lobi-bekleme"><span></span><span></span><span></span></div>
+    </div>
+  </section>
+
+  <!-- OYUN -->
+  <section id="ekran-oyun" class="ekran oyun" hidden>
+    <header class="ust-cubuk">
+      <button class="simge-dugme" id="btn-geri" type="button" aria-label="Oyundan çık">
+        <svg viewBox="0 0 24 24" width="24" height="24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="ust-baslik kucuk-logo"><span>HARF</span><b>DÜELLOSU</b></div>
+      <div class="ust-sag">
+        <button class="simge-dugme" id="btn-ses" type="button" aria-label="Ses">
+          <svg viewBox="0 0 24 24" width="22" height="22"><path d="M4 10v4h4l5 4V6L8 10H4z" fill="currentColor"/><path class="ses-dalga" d="M16 9a4 4 0 0 1 0 6M18.500 6.500a8 8 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path class="ses-kapali" d="M16 9l5 6M21 9l-5 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+        <button class="simge-dugme" id="btn-yardim" type="button" aria-label="Nasıl oynanır">
+          <svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9.500 9.500a2.500 2.500 0 1 1 3.500 2.300c-.7.400-1 1-1 1.700M12 17h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="skor" id="skor">
+      <div class="oyuncu ben" id="oyuncu-0">
+        <span class="avatar" id="avatar-0">S</span>
+        <span class="oyuncu-ad" id="ad-0">Sen</span>
+        <span class="puan" id="puan-0">0</span>
+      </div>
+      <div class="torba" id="torba" title="Torbada kalan harf"><span id="torba-say">0</span><small>harf</small></div>
+      <div class="oyuncu rakip" id="oyuncu-1">
+        <span class="puan" id="puan-1">0</span>
+        <span class="oyuncu-ad" id="ad-1">Rakip</span>
+        <span class="avatar" id="avatar-1">R</span>
+      </div>
+    </div>
+
+    <div class="durum-serit" id="durum-serit">Sıra sende</div>
+
+    <div class="tahta-sarici">
+      <div class="tahta" id="tahta" aria-label="Bulmaca"></div>
+    </div>
+
+    <div class="ipucu-cubugu" id="ipucu-cubugu"></div>
+
+    <div class="istaka" id="istaka" aria-label="Harflerin"></div>
+
+    <div class="eylemler">
+      <button class="eylem" id="btn-degistir" type="button">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 8h13l-3-3M20 16H7l3 3" fill="none" stroke="currentColor" stroke-width="2.200" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Değiştir</span>
+      </button>
+      <button class="eylem ana-eylem" id="btn-tur" type="button">Pas</button>
+      <button class="eylem" id="btn-ipucu" type="button">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.500 10.900c.6.500 1 1.200 1 2V16h5v-.100c0-.8.4-1.500 1-2A6 6 0 0 0 12 3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>İpucu <b id="ipucu-say">2</b></span>
+      </button>
+    </div>
+  </section>
+</main>
+
+<div id="katman" class="katman" hidden><div class="yaprak" id="yaprak" role="dialog" aria-modal="true"></div></div>
+<div id="bildirim" class="bildirim" aria-live="polite"></div>
+<div id="suruklenen" class="tas suruklenen" hidden></div>
+
+<script src="js/oyun-ag.js"></script>
+<script type="module" src="js/uygulama.js"></script>
+</body>
+</html>
