@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Harf Düellosu</title>
 <meta name="description" content="Harf Düellosu: beş harfinle çengel bulmacayı doldur, kelimeyi sen tamamla. Bota karşı ya da arkadaşınla oyna.">
 <meta name="theme-color" content="#FFFFFF">
@@ -127,6 +127,7 @@
       </div>
     </header>
 
+    <div class="oyun-durum">
     <div class="skor" id="skor">
       <div class="oyuncu ben" id="oyuncu-0">
         <span class="avatar" id="avatar-0">S</span>
@@ -142,11 +143,13 @@
     </div>
 
     <div class="durum-serit" id="durum-serit">Sıra sende</div>
+    </div>
 
     <div class="tahta-sarici">
       <div class="tahta" id="tahta" aria-label="Bulmaca"></div>
     </div>
 
+    <aside class="oyun-kumanda" aria-label="Harflerin ve oyun eylemleri">
     <div class="ipucu-cubugu" id="ipucu-cubugu"></div>
 
     <div class="istaka" id="istaka" aria-label="Harflerin"></div>
@@ -162,6 +165,7 @@
         <span>İpucu <b id="ipucu-say">2</b></span>
       </button>
     </div>
+    </aside>
   </section>
 </main>
 

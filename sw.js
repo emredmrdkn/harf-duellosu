@@ -2,7 +2,7 @@
 // Dosyalar değiştiğinde SURUM'u artırın; eski önbellek kendiliğinden silinir.
 const KOK = self.registration.scope;
 const ONBELLEK_ON_EK = "hd:" + KOK + ":";
-const SURUM = ONBELLEK_ON_EK + "1.3.0-pages";
+const SURUM = ONBELLEK_ON_EK + "1.3.1-responsive";
 const ANA_SAYFA = new URL("index.html", KOK).href;
 const DOSYALAR = [
   "./",
