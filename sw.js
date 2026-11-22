@@ -1,8 +1,8 @@
-// Harf Düellosu — servis çalışanı: oyunu çevrimdışı da açılabilir kılar.
+// Bulmaca — servis çalışanı: oyunu çevrimdışı da açılabilir kılar.
 // Dosyalar değiştiğinde SURUM'u artırın; eski önbellek kendiliğinden silinir.
 const KOK = self.registration.scope;
 const ONBELLEK_ON_EK = "hd:" + KOK + ":";
-const SURUM = ONBELLEK_ON_EK + "1.3.1-responsive";
+const SURUM = ONBELLEK_ON_EK + "1.3.4";
 const ANA_SAYFA = new URL("index.html", KOK).href;
 const DOSYALAR = [
   "./",
