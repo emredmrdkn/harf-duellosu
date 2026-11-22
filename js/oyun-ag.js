@@ -15,6 +15,12 @@
             const STALE_MS = 7000;           // misafir: ev sahibi bu kadar sessizse "bekleniyor" de
             const OPEN_TIMEOUT_MS = 20000;   // hiçbir sunucuya ulaşılamazsa hata bildir
             const MAX_OUTBOX = 400;
+            // Çiz Bul'un tam tuval kaydı da bu sınırın altında kalır.
+            const MAX_FRAME_BYTES = 8 * 1024 * 1024;
+            const MAX_PACKET_BYTES = MAX_FRAME_BYTES + 256;
+            const MAX_BUFFER_BYTES = (MAX_PACKET_BYTES + 5) * 2;
+            const FRAME_TYPES = new Set(['A', 'B', 'D', 'H', 'K', 'R', 'X']);
+            const validId = value => typeof value === 'string' && /^[a-z0-9_-]{1,64}$/i.test(value);
 
             const te = new TextEncoder();
             const td = new TextDecoder();
@@ -33,7 +39,7 @@
             function deviceId() {
                 try {
                     let v = localStorage.getItem('sos_net_device');
-                    if (!v || v.length < 8) {
+                    if (!validId(v) || v.length < 8) {
                         v = rid(12);
                         localStorage.setItem('sos_net_device', v);
                     }
@@ -201,6 +207,10 @@
                 }
 
                 feed(chunk) {
+                    if (this.rx.length + chunk.length > MAX_BUFFER_BYTES) {
+                        this.drop('paket boyutu sınırı aşıldı');
+                        return;
+                    }
                     let buf = chunk;
                     if (this.rx.length) {
                         buf = new Uint8Array(this.rx.length + chunk.length);
@@ -221,6 +231,7 @@
                             if (k >= 4) { this.drop('bozuk paket'); return; }
                             break; // uzunluk alanı henüz tamamlanmadı
                         }
+                        if (len > MAX_PACKET_BYTES) { this.drop('paket boyutu sınırı aşıldı'); return; }
                         if (buf.length - i < len) break; // gövde henüz tamamlanmadı
                         this.packet(buf[off], buf.subarray(i, i + len));
                         if (!this.ws) return; // paket işlenirken bağlantı düşürüldü
@@ -244,11 +255,12 @@
                     } else if (type === 3) { // PUBLISH
                         if (body.length < 2) return;
                         const tl = (body[0] << 8) | body[1];
-                        let p = 2 + tl;
-                        if (p > body.length) return;
-                        const topic = td.decode(body.subarray(2, p));
-                        if ((head >> 1) & 3) p += 2; // QoS>0 ise paket kimliği
-                        this.hooks.message(topic, body.slice(p));
+                        const topicEnd = 2 + tl;
+                        const qos = (head >> 1) & 3;
+                        const payloadStart = topicEnd + (qos ? 2 : 0);
+                        if (!tl || qos === 3 || payloadStart > body.length) return;
+                        const topic = td.decode(body.subarray(2, topicEnd));
+                        this.hooks.message(topic, body.subarray(payloadStart));
                     }
                     // SUBACK (9) ve PINGRESP (13): yalnızca canlılık kanıtı (lastRx)
                 }
@@ -304,57 +316,36 @@
                 for (let i = 0; i < u8.length; i++) s += (u8[i] < 16 ? '0' : '') + u8[i].toString(16);
                 return s;
             }
-            function weakHash(str) { // yalnızca WebCrypto yoksa (güvenli olmayan bağlam) kullanılır
-                let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
-                for (let i = 0; i < str.length; i++) {
-                    const ch = str.charCodeAt(i);
-                    h1 = Math.imul(h1 ^ ch, 2654435761);
-                    h2 = Math.imul(h2 ^ ch, 1597334677);
-                }
-                h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
-                h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
-                return (h2 >>> 0).toString(16).padStart(8, '0') + (h1 >>> 0).toString(16).padStart(8, '0');
-            }
             async function roomKeys(roomId) {
                 const id = String(roomId || '').trim().toUpperCase();
-                const subtle = global.crypto && global.crypto.subtle;
-                if (subtle) {
-                    try {
-                        const h1 = new Uint8Array(await subtle.digest('SHA-256', te.encode('sos-relay-v1|konu|' + id)));
-                        const h2 = await subtle.digest('SHA-256', te.encode('sos-relay-v1|anahtar|' + id));
-                        const key = await subtle.importKey('raw', h2, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
-                        return { root: 'sosr1/' + hex(h1.subarray(0, 12)), key: key };
-                    } catch (e) { }
-                }
-                return { root: 'sosr1p/' + weakHash('sos-relay-v1|' + id), key: null };
+                const subtle = global.crypto.subtle;
+                const [topicDigest, keyBytes] = await Promise.all([
+                    subtle.digest('SHA-256', te.encode('sos-relay-v1|konu|' + id)),
+                    subtle.digest('SHA-256', te.encode('sos-relay-v1|anahtar|' + id))
+                ]);
+                const key = await subtle.importKey('raw', keyBytes, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
+                return { root: 'sosr1/' + hex(new Uint8Array(topicDigest).subarray(0, 12)), key };
             }
+
             async function seal(keys, obj) {
                 const plain = te.encode(JSON.stringify(obj));
-                if (!keys.key) {
-                    const o = new Uint8Array(plain.length + 1);
-                    o[0] = 0;
-                    o.set(plain, 1);
-                    return o;
-                }
+                if (plain.length + 29 > MAX_FRAME_BYTES) throw new RangeError('Oyun mesajı çok büyük');
                 const iv = global.crypto.getRandomValues(new Uint8Array(12));
-                const ct = new Uint8Array(await global.crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, keys.key, plain));
-                const o = new Uint8Array(13 + ct.length);
-                o[0] = 1;
-                o.set(iv, 1);
-                o.set(ct, 13);
-                return o;
+                const ciphertext = new Uint8Array(await global.crypto.subtle.encrypt({ name: 'AES-GCM', iv }, keys.key, plain));
+                const packet = new Uint8Array(13 + ciphertext.length);
+                packet[0] = 1;
+                packet.set(iv, 1);
+                packet.set(ciphertext, 13);
+                return packet;
             }
-            async function unseal(keys, u8) {
+
+            async function unseal(keys, bytes) {
+                if (!bytes || bytes.length < 30 || bytes.length > MAX_FRAME_BYTES || bytes[0] !== 1) return null;
                 try {
-                    if (!u8 || u8.length < 2) return null;
-                    if (keys.key) {
-                        if (u8[0] !== 1 || u8.length < 30) return null; // anahtar varken düz metin kabul edilmez
-                        const pt = await global.crypto.subtle.decrypt({ name: 'AES-GCM', iv: u8.slice(1, 13) }, keys.key, u8.slice(13));
-                        return JSON.parse(td.decode(pt));
-                    }
-                    if (u8[0] !== 0) return null;
-                    return JSON.parse(td.decode(u8.subarray(1)));
-                } catch (e) {
+                    const plain = await global.crypto.subtle.decrypt({ name: 'AES-GCM', iv: bytes.subarray(1, 13) }, keys.key, bytes.subarray(13));
+                    const frame = JSON.parse(td.decode(plain));
+                    return frame && typeof frame === 'object' && !Array.isArray(frame) && FRAME_TYPES.has(frame.t) ? frame : null;
+                } catch {
                     return null;
                 }
             }
@@ -405,6 +396,10 @@
                             this._rxTopic = keys.root + '/c/' + this._cid;
                             peer._links.forEach(l => l.sub(this._rxTopic));
                             this._tx({ t: 'H' });
+                        }).catch(error => {
+                            if (this._closed) return;
+                            peer.emit('error', error);
+                            this._finish(false, 'şifreleme başlatılamadı');
                         });
                     }
                     this._timer = setInterval(() => this._tick(), 700);
@@ -457,7 +452,7 @@
                 }
 
                 _acked(a) {
-                    if (typeof a !== 'number') return;
+                    if (!Number.isSafeInteger(a) || a < 0 || a > this._seq) return;
                     while (this._out.length && this._out[0].q <= a) this._out.shift();
                     if (this._closing && !this._out.length) this._finish(true, 'kapatıldı');
                 }
@@ -510,7 +505,7 @@
                     if (this._stale) { this._stale = false; this.emit('fresh'); }
                     switch (f.t) {
                         case 'A':
-                            if (this._role !== 'guest' || this.open || typeof f.h !== 'string') return;
+                            if (this._role !== 'guest' || this.open || !validId(f.h)) return;
                             this._hs = f.h;
                             this.open = true;
                             this.emit('open');
@@ -530,8 +525,8 @@
                             if (this._role === 'host') this._ackSoon();
                             return;
                         case 'D':
+                            if (!Number.isSafeInteger(f.q) || f.q < 1 || f.q > this._in + MAX_OUTBOX) return;
                             this._acked(f.a);
-                            if (typeof f.q !== 'number') return;
                             if (f.q === this._in + 1) {
                                 this._in++;
                                 this.emit('data', f.d);
@@ -582,6 +577,13 @@
                     this._conns = new Map();       // host: cihazKimliği -> bağlantı | misafir: oturum -> bağlantı
                     this._closedSids = [];
                     this._everOpen = false;
+                    this._links = [];
+                    if (!global.crypto?.subtle) {
+                        setTimeout(() => {
+                            if (!this.destroyed) this.emit('error', new Error('Canlı oyun için HTTPS ve Web Crypto gerekli.'));
+                        }, 0);
+                        return;
+                    }
 
                     const urls = (Array.isArray(global.SOS_NET_BROKERS) && global.SOS_NET_BROKERS.length) ? global.SOS_NET_BROKERS
                         : ((this.options.brokers && this.options.brokers.length) ? this.options.brokers : DEFAULT_BROKERS);
@@ -597,6 +599,10 @@
                             this._keys = keys;
                             this._links.forEach(l => l.sub(keys.root + '/h'));
                             this._refresh();
+                        }).catch(error => {
+                            if (this.destroyed) return;
+                            this.emit('error', error);
+                            this.destroy();
                         });
                     }
 
@@ -716,7 +722,7 @@
                 }
 
                 _hostFrame(f) {
-                    if (typeof f.c !== 'string' || typeof f.s !== 'string' || !f.c || !f.s) return;
+                    if (!validId(f.c) || !validId(f.s)) return;
                     let c = this._conns.get(f.c);
                     if (f.t === 'H') {
                         if (c && c._sid === f.s) { c._lastRx = now(); c._tx({ t: 'A' }); return; } // tekrar gelen selam

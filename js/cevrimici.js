@@ -1,4 +1,4 @@
-// Harf Düellosu — statik yayında şifreli canlı oda.
+// Bulmaca — statik yayında şifreli canlı oda.
 // Kurucu sürümü ve hamleleri doğrular; oyuncu anahtarları cihazda üretilir.
 import * as M from "./motor.js";
 import { BULMACALAR } from "./bulmacalar.js";
@@ -170,9 +170,9 @@ function evIsle(s, g) {
     }
     return { kod: s.kod, oyuncu, anahtar: k.oyuncular[oyuncu].anahtar, ...disaAc(k) };
   }
-  if (g.a === "getir") return g.v === k.v && g.n === k.oyuncular.length ? { v: k.v, ayni: true } : disaAc(k);
-  if (g.a !== "yaz") throw new OdaHatasi("Bilinmeyen işlem", 400);
+  if (g.a !== "getir" && g.a !== "yaz") throw new OdaHatasi("Bilinmeyen işlem", 400);
   if (!tam(g.oyuncu, 0, 1) || !k.oyuncular[g.oyuncu] || k.oyuncular[g.oyuncu].anahtar !== g.anahtar) throw new OdaHatasi("Yetkisiz", 403);
+  if (g.a === "getir") return g.v === k.v && g.n === k.oyuncular.length ? { v: k.v, ayni: true } : disaAc(k);
   if (g.v !== k.v) {
     if (ayni(g.durum, k.durum)) return { v: k.v };
     throw new OdaHatasi("Sürüm çakışması", 409, { cakisma: true, ...disaAc(k) });
@@ -194,11 +194,12 @@ async function evAc(kod, k) {
     c.on("data", g => {
       if (s.kapali || !g || typeof g !== "object" || g.hd !== 1 || g.tip !== "istek" || typeof g.id !== "string" || !/^[a-f0-9]{24}$/.test(g.id)) return;
       try { if (JSON.stringify(g).length > 14500) return; } catch { return; }
-      let yanit = s.cevaplar.get(g.id);
+      const yanitAnahtari = JSON.stringify([g.id, g.a, g.oyuncu, g.anahtar]);
+      let yanit = s.cevaplar.get(yanitAnahtari);
       if (!yanit) {
         try { yanit = { hd: 1, tip: "yanit", id: g.id, ok: true, veri: evIsle(s, g) }; }
         catch (e) { yanit = { hd: 1, tip: "yanit", id: g.id, ok: false, hata: e.message, kod: e.kod || 400, govde: e.govde || {} }; }
-        s.cevaplar.set(g.id, yanit);
+        s.cevaplar.set(yanitAnahtari, yanit);
         if (s.cevaplar.size > 100) s.cevaplar.delete(s.cevaplar.keys().next().value);
       }
       c.send(yanit);
@@ -302,7 +303,7 @@ export const Oda = {
     return yanit;
   },
   yaz(kod, oyuncu, anahtar, v, durum) { return istek(oturumAl(kod), { a: "yaz", oyuncu, anahtar, v, durum }); },
-  getir(kod, v, n) { return istek(oturumAl(kod), { a: "getir", v, n }); },
+  getir(kod, oyuncu, anahtar, v, n) { return istek(oturumAl(kod), { a: "getir", oyuncu, anahtar, v, n }); },
   kapat: durdur,
 };
 
@@ -322,6 +323,10 @@ export function davetBaglantisi(kod) {
   u.searchParams.set("oda", kod);
   return u.toString();
 }
+export const OYUN_ADI = "Bulmaca";
+export function davetMetni(ad) {
+  return `${ad} seni ${OYUN_ADI} oynamaya çağırıyor!`;
+}
 export function whatsappBaglantisi(kod, ad) {
-  return "https://wa.me/?text=" + encodeURIComponent(`${ad} seni Harf Düellosu'na çağırıyor! Bulmacada kapışalım: ${davetBaglantisi(kod)}`);
+  return "https://wa.me/?text=" + encodeURIComponent(davetMetni(ad) + "\n" + davetBaglantisi(kod));
 }

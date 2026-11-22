@@ -1,4 +1,4 @@
-# Harf Düellosu
+# Bulmaca
 
 Beş harfinle çengel bulmacayı doldur. Bota karşı veya arkadaşınla iki cihazdan oyna.
 

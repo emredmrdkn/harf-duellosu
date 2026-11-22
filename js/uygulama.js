@@ -1,11 +1,10 @@
-// Harf Düellosu — arayüz denetçisi
+// Bulmaca — arayüz denetçisi
 import { BULMACALAR } from "./bulmacalar.js";
 import * as M from "./motor.js";
 import { SEVIYELER, botKarari } from "./bot.js";
-import { Oda, odaKaydet, odaOku, sonOda, sonOdaSil, davetBaglantisi, whatsappBaglantisi } from "./cevrimici.js";
+import { Oda, OYUN_ADI, odaKaydet, odaOku, sonOda, sonOdaSil, davetBaglantisi, davetMetni, whatsappBaglantisi } from "./cevrimici.js";
 import { Ses } from "./ses.js";
 
-const SURUM = "1.2.1";
 const $ = (s) => document.querySelector(s);
 const bekle = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -275,7 +274,7 @@ async function telefonaKur() {
         <li><span><b>Uygulamayı yükle</b> ya da <b>Ana ekrana ekle</b>'yi seç.</span></li>
         <li><span><b>Yükle</b>'ye bas. Simge ana ekranına gelir.</span></li>
       </ol>
-      <p>Menüde bu seçenek yerine "Harf Düellosu'nu aç" yazıyorsa oyun zaten kurulu demektir.</p>`,
+      <p>Menüde “${OYUN_ADI}’yı aç” yazıyorsa oyun zaten kurulu demektir.</p>`,
     ios: `
       <p>iPhone ve iPad'de kurulum Safari'den yapılır:</p>
       <ol class="adimlar">
@@ -322,9 +321,9 @@ function panoyaYaz(metin) {
 
 // Oyunun kendisini (oda değil) paylaşır
 function oyunuPaylas() {
-  const metin = "Harf Düellosu: bulmacada kapışalım mı? Telefonuna da kurabilirsin:";
+  const metin = `${OYUN_ADI} oynayalım mı? Telefonuna da kurabilirsin.`;
   if (navigator.share) {
-    navigator.share({ title: "Harf Düellosu", text: metin, url: siteAdresi() }).catch(() => {});
+    navigator.share({ title: OYUN_ADI, text: metin, url: siteAdresi() }).catch(() => {});
   } else {
     window.open("https://wa.me/?text=" + encodeURIComponent(metin + " " + siteAdresi()), "_blank", "noopener");
   }
@@ -334,7 +333,7 @@ function anaEkranaDon() {
   U.oyunNo++;
   U.mod = null;
   cevrimDurdur();
-  document.title = "Harf Düellosu";
+  document.title = OYUN_ADI;
   anaCiz();
   ekranGoster("ana");
   if (history.state && history.state.hd) history.back();
@@ -667,7 +666,7 @@ function durumSeritCiz(ozel) {
     return;
   }
   const d = U.d;
-  document.title = !d.bitti && d.sira === U.ben && U.mod === "cevrim" ? "● Sıra sende — Harf Düellosu" : "Harf Düellosu";
+  document.title = !d.bitti && d.sira === U.ben && U.mod === "cevrim" ? `● Sıra sende — ${OYUN_ADI}` : OYUN_ADI;
   if (d.bitti) {
     el.textContent = "Oyun bitti";
   } else if (d.sira === U.ben) {
@@ -1042,7 +1041,7 @@ function sunucuHataMetni(e) {
 async function lobiYokla(c) {
   if (c.durdu || U.cevrim !== c) return;
   try {
-    const r = await Oda.getir(c.kod, c.v, 1);
+    const r = await Oda.getir(c.kod, c.oyuncu, c.anahtar, c.v, 1);
     if (c.durdu || U.cevrim !== c) return;
     if (!r.ayni && r.oyuncular && r.oyuncular.length === 2) {
       cevrimOyunuAc(c, r);
@@ -1143,7 +1142,7 @@ async function yokla(c) {
   if (document.hidden) gecikme = 6000;
   try {
     if (!c.yaziyor && !c.bekleyenDurum && !U.kilit) {
-      const r = await Oda.getir(c.kod, c.v, 2);
+      const r = await Oda.getir(c.kod, c.oyuncu, c.anahtar, c.v, 2);
       c.hataSay = 0;
       if (c.durdu || U.cevrim !== c) return;
       if (!r.ayni && r.v > c.v && !c.yaziyor && !c.bekleyenDurum && !U.kilit && r.durum) {
@@ -1332,7 +1331,7 @@ function olaylariBagla() {
   $("#btn-paylas").onclick = () => {
     if (!U.cevrim) return;
     navigator
-      .share({ title: "Harf Düellosu", text: `${benimAdim()} seni Harf Düellosu'na çağırıyor!`, url: davetBaglantisi(U.cevrim.kod) })
+      .share({ title: OYUN_ADI, text: davetMetni(benimAdim()), url: davetBaglantisi(U.cevrim.kod) })
       .catch(() => {});
   };
   $("#btn-kopyala").onclick = baglantiKopyala;
